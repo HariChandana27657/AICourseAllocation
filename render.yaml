@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: course-allocation-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: USE_SQLITE
+        value: true
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: AICourseAllocation_SuperSecret_2026_VFSTR_Key_xyz789!
