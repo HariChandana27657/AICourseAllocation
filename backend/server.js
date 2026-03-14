@@ -74,11 +74,8 @@ app.listen(PORT, () => {
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, closing server...');
-  pool.end(() => {
-    console.log('Database pool closed');
-    process.exit(0);
-  });
+  console.log('SIGTERM received, shutting down...');
+  process.exit(0);
 });
 
 module.exports = app;
