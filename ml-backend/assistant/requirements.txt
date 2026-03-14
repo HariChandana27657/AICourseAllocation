@@ -1,0 +1,13 @@
+# Core
+requests==2.31.0
+
+# Speech Recognition (microphone input)
+SpeechRecognition==3.10.1
+PyAudio==0.2.14
+
+# Text-to-Speech (offline, no API key)
+pyttsx3==2.90
+
+# Optional: Online TTS (better voice quality)
+# gTTS==2.5.0
+# pygame==2.5.2

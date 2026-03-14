@@ -1,0 +1,737 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #fafafa;
+  min-height: 100vh;
+  color: #1F2937;
+}
+
+/* ============================================
+   PARALLAX LANDSCAPE ANIMATIONS
+   Layers: sky → mountains → hills → trees → grass → foreground
+   ============================================ */
+
+/* --- Parallax Pan (horizontal camera movement) --- */
+@keyframes parallax-pan-slow {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.33%); }
+}
+@keyframes parallax-pan-mid {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes parallax-pan-fast {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-66.66%); }
+}
+
+/* --- Parallax Float layers (vertical depth) --- */
+@keyframes parallax-layer-1 {
+  /* Sky — barely moves */
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50%       { transform: translateY(-6px) translateX(4px); }
+}
+@keyframes parallax-layer-2 {
+  /* Far mountains */
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50%       { transform: translateY(-12px) translateX(8px); }
+}
+@keyframes parallax-layer-3 {
+  /* Mid hills */
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50%       { transform: translateY(-20px) translateX(14px); }
+}
+@keyframes parallax-layer-4 {
+  /* Trees */
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50%       { transform: translateY(-30px) translateX(20px); }
+}
+@keyframes parallax-layer-5 {
+  /* Foreground grass — moves most */
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50%       { transform: translateY(-42px) translateX(28px); }
+}
+
+/* --- Zoom / Dolly effect --- */
+@keyframes parallax-zoom {
+  0%   { transform: scale(1)    translateY(0); }
+  50%  { transform: scale(1.08) translateY(-10px); }
+  100% { transform: scale(1)    translateY(0); }
+}
+
+/* --- Fake 3D / 2.5D tilt on hover (applied via JS class) --- */
+@keyframes parallax-tilt {
+  0%   { transform: perspective(800px) rotateX(0deg)  rotateY(0deg); }
+  25%  { transform: perspective(800px) rotateX(3deg)  rotateY(-4deg); }
+  75%  { transform: perspective(800px) rotateX(-3deg) rotateY(4deg); }
+  100% { transform: perspective(800px) rotateX(0deg)  rotateY(0deg); }
+}
+
+/* --- Isometric rotation --- */
+@keyframes parallax-iso-rotate {
+  0%   { transform: rotateX(30deg) rotateZ(0deg); }
+  100% { transform: rotateX(30deg) rotateZ(360deg); }
+}
+
+/* --- Floating clouds drift --- */
+@keyframes cloud-drift {
+  0%   { transform: translateX(-120px) translateY(0); opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateX(calc(100vw + 120px)) translateY(-20px); opacity: 0; }
+}
+
+/* --- Grass sway --- */
+@keyframes grass-sway {
+  0%, 100% { transform: skewX(0deg) scaleY(1); }
+  25%       { transform: skewX(3deg) scaleY(0.98); }
+  75%       { transform: skewX(-3deg) scaleY(0.98); }
+}
+
+/* --- Tree gentle rock --- */
+@keyframes tree-rock {
+  0%, 100% { transform: rotate(0deg); transform-origin: bottom center; }
+  30%       { transform: rotate(1.5deg); transform-origin: bottom center; }
+  70%       { transform: rotate(-1.5deg); transform-origin: bottom center; }
+}
+
+/* --- Mountain breathe (subtle scale) --- */
+@keyframes mountain-breathe {
+  0%, 100% { transform: scaleY(1) translateY(0); }
+  50%       { transform: scaleY(1.015) translateY(-4px); }
+}
+
+/* --- Utility animation classes --- */
+.parallax-sky        { animation: parallax-layer-1   18s ease-in-out infinite; }
+.parallax-mountains  { animation: parallax-layer-2   14s ease-in-out infinite; }
+.parallax-hills      { animation: parallax-layer-3   11s ease-in-out infinite; }
+.parallax-trees      { animation: parallax-layer-4    8s ease-in-out infinite; }
+.parallax-foreground { animation: parallax-layer-5    6s ease-in-out infinite; }
+
+.parallax-pan-slow   { animation: parallax-pan-slow  40s linear infinite; }
+.parallax-pan-mid    { animation: parallax-pan-mid   25s linear infinite; }
+.parallax-pan-fast   { animation: parallax-pan-fast  15s linear infinite; }
+
+.parallax-zoom       { animation: parallax-zoom      12s ease-in-out infinite; }
+.parallax-tilt       { animation: parallax-tilt      10s ease-in-out infinite; }
+.parallax-iso        { animation: parallax-iso-rotate 20s linear infinite; }
+
+.cloud-drift         { animation: cloud-drift        28s linear infinite; }
+.cloud-drift-slow    { animation: cloud-drift        42s linear infinite; }
+.cloud-drift-fast    { animation: cloud-drift        18s linear infinite; }
+
+.grass-sway          { animation: grass-sway          4s ease-in-out infinite; }
+.tree-rock           { animation: tree-rock           5s ease-in-out infinite; }
+.mountain-breathe    { animation: mountain-breathe   10s ease-in-out infinite; }
+
+/* --- Parallax scene container --- */
+.parallax-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.parallax-layer {
+  position: absolute;
+  width: 100%;
+  will-change: transform;
+}
+
+/* --- Stagger delays for natural feel --- */
+.delay-1  { animation-delay: 0s; }
+.delay-2  { animation-delay: 1.5s; }
+.delay-3  { animation-delay: 3s; }
+.delay-4  { animation-delay: 4.5s; }
+.delay-5  { animation-delay: 6s; }
+.delay-6  { animation-delay: 7.5s; }
+
+/* --- 2.5D card depth on hover --- */
+.depth-card {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+.depth-card:hover {
+  transform: perspective(1000px) rotateX(-4deg) rotateY(4deg) translateY(-8px);
+  box-shadow: 12px 20px 40px rgba(255, 154, 183, 0.25);
+}
+
+/* --- Scroll-triggered reveal (add class via IntersectionObserver) --- */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Curved ribbon decorations (kept for legacy use) */
+.curved-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.curved-bg::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  right: -5%;
+  width: 600px;
+  height: 600px;
+  background: linear-gradient(135deg, #FFB3C6 0%, #FF9AB7 100%);
+  border-radius: 50% 50% 0 50%;
+  opacity: 0.15;
+  transform: rotate(-15deg);
+  z-index: 0;
+}
+
+.curved-bg::after {
+  content: '';
+  position: absolute;
+  bottom: -10%;
+  left: -5%;
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(135deg, #d1fd93 0%, #60A5FA 100%);
+  border-radius: 50% 0 50% 50%;
+  opacity: 0.15;
+  transform: rotate(15deg);
+  z-index: 0;
+}
+
+/* Curved ribbon decorations */
+.ribbon-pink {
+  position: absolute;
+  width: 800px;
+  height: 400px;
+  background: linear-gradient(135deg, rgba(255, 179, 198, 0.2) 0%, rgba(255, 154, 183, 0.15) 100%);
+  border-radius: 50%;
+  transform: rotate(-25deg);
+  z-index: 0;
+}
+
+.ribbon-blue {
+  position: absolute;
+  width: 700px;
+  height: 350px;
+  background: linear-gradient(135deg, rgba(147, 197, 253, 0.2) 0%, rgba(96, 165, 250, 0.15) 100%);
+  border-radius: 50%;
+  transform: rotate(25deg);
+  z-index: 0;
+}
+
+.ribbon-yellow {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.3) 0%, rgba(253, 230, 138, 0.2) 100%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F9FAFB;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #FF9AB7 0%, #93C5FD 100%);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #FF7096 0%, #60A5FA 100%);
+}
+
+/* Animations - Smoother and More Modern */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-30px) rotate(5deg);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(25px) translateY(-25px) rotate(8deg);
+  }
+  50% {
+    transform: translateX(0) translateY(-50px) rotate(0deg);
+  }
+  75% {
+    transform: translateX(-25px) translateY(-25px) rotate(-8deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slideIn {
+  animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-float {
+  animation: float 10s ease-in-out infinite;
+}
+
+.animate-wave {
+  animation: wave 12s ease-in-out infinite;
+}
+
+.animate-pulse {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+/* Enhanced Glass morphism */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.glass-dark {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 25px 50px rgba(255, 154, 183, 0.2);
+}
+
+/* Gradient text - DARK for visibility */
+.gradient-text {
+  background: linear-gradient(135deg, #E91E63 0%, #2196F3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* Button styles */
+.btn-gradient {
+  background: linear-gradient(135deg, #FF9AB7 0%, #FF7096 100%);
+  transition: all 0.3s ease;
+  border-radius: 9999px;
+  padding: 14px 32px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(255, 154, 183, 0.3);
+  color: #FFFFFF;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(135deg, #FF7096 0%, #E91E63 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(255, 154, 183, 0.4);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%);
+  transition: all 0.3s ease;
+  border-radius: 9999px;
+  padding: 14px 32px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(147, 197, 253, 0.3);
+  color: #FFFFFF;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #60A5FA 0%, #2196F3 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(147, 197, 253, 0.4);
+}
+
+/* Loading spinner */
+.spinner {
+  border: 4px solid rgba(255, 154, 183, 0.2);
+  border-radius: 50%;
+  border-top: 4px solid #FF9AB7;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Badge styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-pink {
+  background: linear-gradient(135deg, #FFE4E9 0%, #FFD1DC 100%);
+  color: #C2185B;
+}
+
+.badge-blue {
+  background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
+  color: #0277BD;
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 10px;
+  background: rgba(255, 154, 183, 0.15);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF9AB7 0%, #93C5FD 100%);
+  transition: width 0.5s ease;
+  border-radius: 9999px;
+}
+
+/* Form styles */
+.form-input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid rgba(255, 154, 183, 0.2);
+  border-radius: 16px;
+  font-size: 15px;
+  transition: all 0.3s;
+  background: white;
+  color: #1F2937;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #FF9AB7;
+  box-shadow: 0 0 0 4px rgba(255, 154, 183, 0.1);
+}
+
+.form-input::placeholder {
+  color: #9CA3AF;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+/* Stat card */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 154, 183, 0.1), transparent);
+  transition: left 0.6s;
+}
+
+.stat-card:hover::before {
+  left: 100%;
+}
+
+/* Table styles */
+.table-container {
+  overflow-x: auto;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+  background: white;
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-container th {
+  background: linear-gradient(135deg, #FF9AB7 0%, #93C5FD 100%);
+  color: white;
+  font-weight: 600;
+  text-align: left;
+  padding: 18px 20px;
+}
+
+.table-container td {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 154, 183, 0.1);
+  color: #374151;
+}
+
+.table-container tr:hover {
+  background: rgba(255, 154, 183, 0.03);
+}
+
+/* Soft shadows */
+.shadow-soft {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-hover {
+  box-shadow: 0 20px 60px rgba(255, 154, 183, 0.15);
+}
+
+/* Drag and drop */
+.dragging {
+  opacity: 0.6;
+  cursor: grabbing;
+}
+
+.drag-over {
+  border: 3px dashed #FF9AB7;
+  background: rgba(255, 154, 183, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none;
+  }
+}
+
+/* ── Blob morph shape ── */
+.blob-shape {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  animation: blob-morph 8s ease-in-out infinite;
+}
+@keyframes blob-morph {
+  0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  25%      { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  50%      { border-radius: 50% 60% 30% 60% / 30% 40% 70% 50%; }
+  75%      { border-radius: 40% 60% 60% 40% / 60% 30% 60% 40%; }
+}
+
+/* ── Tilt card ── */
+.tilt-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.tilt-card:hover {
+  transform: perspective(800px) rotateX(-3deg) rotateY(5deg) scale(1.03);
+  box-shadow: 0 30px 60px rgba(255,154,183,0.2);
+}
+
+/* ── Stagger animation ── */
+.stagger-item {
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: stagger-in 0.5s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+@keyframes stagger-in {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Glow effects ── */
+.glow-pink  { box-shadow: 0 0 30px rgba(255,154,183,0.4); }
+.glow-blue  { box-shadow: 0 0 30px rgba(147,197,253,0.4); }
+.glow-green { box-shadow: 0 0 30px rgba(52,211,153,0.4); }
+
+/* ── Floating badge ── */
+@keyframes badge-float {
+  0%,100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-8px) rotate(2deg); }
+}
+.badge-float { animation: badge-float 3s ease-in-out infinite; }
+
+/* ── Diagonal stripe ── */
+.stripe-bg {
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 10px,
+    rgba(255,154,183,0.04) 10px, rgba(255,154,183,0.04) 20px
+  );
+}
+
+/* ── Slide up ── */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-up { animation: slide-up 0.6s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+/* ── Scale in ── */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.scale-in { animation: scale-in 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+/* ── Rotate in ── */
+@keyframes rotate-in {
+  from { opacity: 0; transform: rotate(-10deg) scale(0.9); }
+  to   { opacity: 1; transform: rotate(0deg) scale(1); }
+}
+.rotate-in { animation: rotate-in 0.6s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+/* ── Gradient border ── */
+.gradient-border {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #FF9AB7, #93C5FD, #FDE68A);
+  z-index: -1;
+}
+
+/* ── Pulse ring ── */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* ── Shimmer loading ── */
+@keyframes shimmer-load {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 400px 100%;
+  animation: shimmer-load 1.4s ease infinite;
+}
+
+/* ── Hexagon clip ── */
+.hex-shape {
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* ── Diamond clip ── */
+.diamond-shape {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+/* ── Depth card 3D ── */
+.depth-card {
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1), box-shadow 0.4s ease;
+  transform-style: preserve-3d;
+}
+.depth-card:hover {
+  transform: perspective(1000px) rotateX(-4deg) rotateY(4deg) translateY(-8px);
+  box-shadow: 12px 20px 40px rgba(255,154,183,0.25);
+}
