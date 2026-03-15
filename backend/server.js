@@ -37,6 +37,25 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Course Allocation System API is running' });
 });
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    message: '🎓 Course Allocation System API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      auth: '/api/auth/student/login',
+      courses: '/api/courses',
+      preferences: '/api/preferences',
+      allocation: '/api/allocation/results',
+      reports: '/api/reports/analytics',
+      notifications: '/api/notifications',
+      chat: '/api/chat'
+    }
+  });
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
