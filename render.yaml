@@ -3,7 +3,7 @@ services:
     name: course-allocation-backend
     runtime: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm install --production
     startCommand: node server.js
     envVars:
       - key: PORT
