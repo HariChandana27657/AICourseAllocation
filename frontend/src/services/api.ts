@@ -50,7 +50,7 @@ export const preferenceAPI = {
 
 // Allocation API
 export const allocationAPI = {
-  run: () => api.post('/allocation/run'),
+  run: () => api.post('/allocation/run', {}, { timeout: 120000 }),
   getResults: () => api.get<{ studentId: number; allocatedCourses: Enrollment[] }>('/allocation/results'),
 };
 

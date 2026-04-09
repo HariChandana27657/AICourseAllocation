@@ -110,7 +110,7 @@ const getDashboardAnalytics = async (req, res) => {
       ORDER BY total_enrolled DESC
     `, []);
 
-    const overview = (result.rows || result)[0] || stats.rows[0] || stats[0];
+    const overview = (stats.rows || stats)[0];
     const totalCapacity = overview.total_capacity || 1;
     const totalEnrollments = overview.total_enrollments || 0;
     overview.avg_utilization = Math.round((totalEnrollments / totalCapacity) * 100 * 100) / 100;

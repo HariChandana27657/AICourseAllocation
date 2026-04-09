@@ -2,6 +2,9 @@ const allocationService = require('../services/allocationService');
 
 // Run allocation algorithm (Admin only)
 const runAllocation = async (req, res) => {
+  // Set a long timeout for large datasets
+  req.setTimeout && req.setTimeout(120000);
+  res.setTimeout && res.setTimeout(120000);
   try {
     const result = await allocationService.runAllocation();
     res.json(result);

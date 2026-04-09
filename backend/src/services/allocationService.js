@@ -15,179 +15,183 @@ const createNotification = async (userId, userRole, type, title, message) => {
       `INSERT INTO notifications (user_id, user_role, type, title, message) VALUES (?, ?, ?, ?, ?)`,
       [userId, userRole, type, title, message]
     );
-  } catch (e) {
-    console.error('Notification error:', e.message);
-  }
+  } catch (e) { /* silent */ }
 };
 
-/**
- * CGPA Priority Tiers:
- *  Tier 1: CGPA >= 8.0  (highest priority)
- *  Tier 2: CGPA >= 7.5
- *  Tier 3: CGPA >= 7.0
- *  Tier 4: CGPA < 7.0   (lowest priority)
- *
- * Rules:
- *  1. Each student gets ONLY ONE elective course
- *  2. Students already enrolled in a course (completed_courses) cannot get it again
- *  3. Seat capacity strictly enforced per section
- *  4. If first choice full → try next preference
- *  5. Courses filtered by student's year_of_study
- */
+function getCGPATier(gpa) {
+  if (gpa >= 8.0) return 1;
+  if (gpa >= 7.5) return 2;
+  if (gpa >= 7.0) return 3;
+  return 4;
+}
+
+function timesConflict(slot1, slot2) {
+  if (!slot1 || !slot2) return false;
+  const days1 = slot1.split(' ')[0].split('/');
+  const days2 = slot2.split(' ')[0].split('/');
+  return days1.some(d => days2.includes(d));
+}
 
 class AllocationService {
 
-  getCGPATier(gpa) {
-    if (gpa >= 8.0) return 1;
-    if (gpa >= 7.5) return 2;
-    if (gpa >= 7.0) return 3;
-    return 4;
-  }
-
   async runAllocation() {
-    console.log('🚀 Starting CGPA-priority elective allocation...');
+    console.log('🚀 Starting bulk CGPA-priority elective allocation...');
+    const startTime = Date.now();
 
-    // Clear existing allocations
+    // ── Step 1: Clear existing allocations ──
     await execute('DELETE FROM enrollments', []);
     await execute('UPDATE courses SET enrolled_count = 0', []);
 
-    // Get all students sorted by CGPA desc, then id asc (tiebreaker)
+    // ── Step 2: Load ALL data into memory (one query each) ──
     const students = await query(
-      `SELECT id, name, email, gpa, department, year_of_study
-       FROM students
-       ORDER BY gpa DESC, id ASC`,
-      []
+      `SELECT id, name, gpa, year_of_study FROM students ORDER BY gpa DESC, id ASC`
     );
 
-    console.log(`📊 Processing ${students.length} students in CGPA order...`);
+    const courses = await query(
+      `SELECT id, course_code, course_name, section, seat_capacity, enrolled_count, time_slot, year_of_study, course_type
+       FROM courses WHERE course_type = 'elective'`
+    );
 
-    const allocationResults = [];
+    const allPrefs = await query(
+      `SELECT student_id, course_id, preference_rank FROM preferences ORDER BY student_id, preference_rank`
+    );
 
-    for (const student of students) {
-      const tier = this.getCGPATier(student.gpa);
-      console.log(`👤 ${student.name} | CGPA: ${student.gpa} | Tier: ${tier} | Year: ${student.year_of_study}`);
+    const completedRows = await query(
+      `SELECT student_id, course_id FROM completed_courses`
+    );
 
-      // Get completed course IDs (cannot be re-allocated)
-      const completed = await query(
-        `SELECT course_id FROM completed_courses WHERE student_id = ?`,
-        [student.id]
-      );
-      const completedIds = new Set(completed.map(c => c.course_id));
+    console.log(`📊 Students: ${students.length} | Courses: ${courses.length} | Preferences: ${allPrefs.length}`);
 
-      // Get student preferences — only for their year_of_study, excluding completed
-      const prefs = await query(
-        `SELECT p.course_id, p.preference_rank,
-                c.course_code, c.course_name, c.section,
-                c.seat_capacity, c.enrolled_count, c.time_slot,
-                c.year_of_study, c.course_type
-         FROM preferences p
-         JOIN courses c ON p.course_id = c.id
-         WHERE p.student_id = ?
-           AND c.year_of_study = ?
-           AND c.course_type = 'elective'
-         ORDER BY p.preference_rank`,
-        [student.id, student.year_of_study]
-      );
+    // ── Step 3: Build in-memory maps ──
+    // course map: id → course object (with live seat tracking)
+    const courseMap = {};
+    courses.forEach(c => { courseMap[c.id] = { ...c, available: c.seat_capacity - c.enrolled_count }; });
 
-      const studentResult = {
-        studentId: student.id,
-        studentName: student.name,
-        gpa: student.gpa,
-        tier,
-        yearOfStudy: student.year_of_study,
-        allocatedCourse: null,
-        failedAllocations: []
-      };
-
-      let allocated = false;
-
-      for (const pref of prefs) {
-        // Rule: skip if already completed this course
-        if (completedIds.has(pref.course_id)) {
-          studentResult.failedAllocations.push({
-            courseCode: `${pref.course_code}-${pref.section}`,
-            reason: 'Already completed this course',
-            rank: pref.preference_rank
-          });
-          console.log(`    ⛔ ${pref.course_code}-${pref.section} — already completed`);
-          continue;
-        }
-
-        // Rule: check seat availability
-        const available = pref.seat_capacity - pref.enrolled_count;
-        if (available <= 0) {
-          studentResult.failedAllocations.push({
-            courseCode: `${pref.course_code}-${pref.section}`,
-            reason: 'No seats available',
-            rank: pref.preference_rank
-          });
-          console.log(`    ❌ ${pref.course_code}-${pref.section} — no seats`);
-          continue;
-        }
-
-        // Allocate — ONE elective only
-        await execute(
-          `INSERT INTO enrollments (student_id, course_id, allocation_status) VALUES (?, ?, 'allocated')`,
-          [student.id, pref.course_id]
-        );
-        await execute(
-          `UPDATE courses SET enrolled_count = enrolled_count + 1 WHERE id = ?`,
-          [pref.course_id]
-        );
-
-        studentResult.allocatedCourse = {
-          courseCode: pref.course_code,
-          section: pref.section,
-          courseName: pref.course_name,
-          rank: pref.preference_rank,
-          timeSlot: pref.time_slot
-        };
-        allocated = true;
-        console.log(`    ✅ Allocated: ${pref.course_code}-${pref.section} (Rank ${pref.preference_rank})`);
-        break; // ONE elective only — stop after first successful allocation
-      }
-
-      // Notify student
-      if (allocated) {
-        const c = studentResult.allocatedCourse;
-        await createNotification(
-          student.id, 'student', 'allocation_result',
-          '🎯 Elective Course Allocated!',
-          `You have been allocated: ${c.courseCode} Section ${c.section} — ${c.courseName}. Check your Results page.`
-        );
-      } else {
-        await createNotification(
-          student.id, 'student', 'allocation_result',
-          '⚠️ No Elective Allocated',
-          `No elective could be allocated. All preferred courses are full or already completed. Please contact your admin.`
-        );
-      }
-
-      allocationResults.push(studentResult);
-    }
-
-    // Summary by tier
-    const tierSummary = [1, 2, 3, 4].map(tier => {
-      const tierStudents = allocationResults.filter(s => s.tier === tier);
-      const allocated = tierStudents.filter(s => s.allocatedCourse).length;
-      return { tier, total: tierStudents.length, allocated, unallocated: tierStudents.length - allocated };
+    // preferences map: student_id → sorted array of course_ids
+    const prefMap = {};
+    allPrefs.forEach(p => {
+      if (!prefMap[p.student_id]) prefMap[p.student_id] = [];
+      prefMap[p.student_id].push(p.course_id);
     });
 
-    console.log('✅ Allocation completed!');
-    console.log('📊 Tier Summary:', JSON.stringify(tierSummary));
+    // completed set: "studentId_courseId"
+    const completedSet = new Set(completedRows.map(r => `${r.student_id}_${r.course_id}`));
+
+    // ── Step 4: Allocate in memory ──
+    const allocations = []; // { student_id, course_id }
+    const results = [];
+    let totalAllocated = 0;
+
+    for (const student of students) {
+      const prefs = prefMap[student.id] || [];
+      let allocated = false;
+
+      for (const courseId of prefs) {
+        const course = courseMap[courseId];
+        if (!course) continue;
+
+        // Skip if wrong year
+        if (course.year_of_study && course.year_of_study !== student.year_of_study) continue;
+
+        // Skip if already completed
+        if (completedSet.has(`${student.id}_${courseId}`)) continue;
+
+        // Skip if no seats
+        if (course.available <= 0) continue;
+
+        // Allocate!
+        course.available--;
+        course.enrolled_count++;
+        allocations.push([student.id, courseId]);
+        totalAllocated++;
+        allocated = true;
+
+        results.push({
+          studentId: student.id,
+          studentName: student.name,
+          gpa: student.gpa,
+          tier: getCGPATier(student.gpa),
+          allocatedCourse: {
+            courseCode: course.course_code,
+            section: course.section,
+            courseName: course.course_name
+          }
+        });
+        break; // ONE elective only
+      }
+
+      if (!allocated && prefs.length > 0) {
+        results.push({
+          studentId: student.id,
+          studentName: student.name,
+          gpa: student.gpa,
+          tier: getCGPATier(student.gpa),
+          allocatedCourse: null
+        });
+      }
+    }
+
+    // ── Step 5: Bulk insert allocations ──
+    console.log(`💾 Saving ${allocations.length} allocations to database...`);
+
+    if (allocations.length > 0) {
+      // Insert in batches of 500
+      const BATCH = 500;
+      for (let i = 0; i < allocations.length; i += BATCH) {
+        const batch = allocations.slice(i, i + BATCH);
+        const placeholders = batch.map(() => '(?,?,?)').join(',');
+        const values = batch.flatMap(([sid, cid]) => [sid, cid, 'allocated']);
+        await execute(
+          `INSERT OR IGNORE INTO enrollments (student_id, course_id, allocation_status) VALUES ${placeholders}`,
+          values
+        );
+      }
+    }
+
+    // ── Step 6: Bulk update enrolled_count ──
+    for (const course of courses) {
+      const updated = courseMap[course.id];
+      if (updated.enrolled_count !== course.enrolled_count) {
+        await execute(
+          `UPDATE courses SET enrolled_count = ? WHERE id = ?`,
+          [updated.enrolled_count, course.id]
+        );
+      }
+    }
+
+    // ── Step 7: Notify students (batch, limit to 1000 to avoid timeout) ──
+    const notifyLimit = Math.min(allocations.length, 1000);
+    for (let i = 0; i < notifyLimit; i++) {
+      const [studentId, courseId] = allocations[i];
+      const course = courseMap[courseId];
+      await createNotification(studentId, 'student', 'allocation_result',
+        '🎯 Elective Course Allocated!',
+        `You have been allocated: ${course.course_code}-${course.section} — ${course.course_name}.`
+      );
+    }
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`✅ Allocation done in ${elapsed}s — ${totalAllocated}/${students.length} students allocated`);
+
+    // Tier summary
+    const tierSummary = [1, 2, 3, 4].map(tier => {
+      const ts = results.filter(s => s.tier === tier);
+      const alloc = ts.filter(s => s.allocatedCourse).length;
+      return { tier, total: ts.length, allocated: alloc, unallocated: ts.length - alloc };
+    });
 
     return {
       success: true,
-      message: 'Elective allocation completed successfully',
+      message: `Allocation completed in ${elapsed}s`,
       totalStudents: students.length,
-      totalAllocated: allocationResults.filter(s => s.allocatedCourse).length,
+      totalAllocated,
       tierSummary,
-      results: allocationResults
+      results: results.slice(0, 100) // return first 100 for display
     };
   }
 
   async getStudentAllocation(studentId) {
-    const result = await query(
+    return await query(
       `SELECT e.*, c.course_code, c.course_name, c.department,
               c.instructor, c.time_slot, c.seat_capacity, c.section, c.course_type
        FROM enrollments e
@@ -195,7 +199,6 @@ class AllocationService {
        WHERE e.student_id = ? AND e.allocation_status = 'allocated'`,
       [studentId]
     );
-    return result;
   }
 }
 

@@ -38,9 +38,7 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
         courseAPI.getAll(),
       ]);
       setPreferences(prefRes.data);
-      // Handle new allocation response format (single course)
-      const allocData = allocRes.data?.allocatedCourse ? [allocRes.data.allocatedCourse] : [];
-      setAllocations(allocData);
+      setAllocations(allocRes.data?.allocatedCourses || []);
       setCourses(coursesRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
