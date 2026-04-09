@@ -14,16 +14,14 @@ const runAllocation = async (req, res) => {
   }
 };
 
-// Get allocation results for student (includes year of study)
+// Get allocation results for student
 const getStudentAllocation = async (req, res) => {
   try {
     const studentId = req.user.id;
     const allocations = await allocationService.getStudentAllocation(studentId);
-    
     res.json({
       studentId,
-      allocatedCourse: allocations.length > 0 ? allocations[0] : null,
-      status: allocations.length > 0 ? 'allocated' : 'not_allocated'
+      allocatedCourses: allocations
     });
   } catch (error) {
     console.error('Get allocation error:', error);
