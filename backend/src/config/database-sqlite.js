@@ -1,11 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// SQLite database file path — use /tmp on Railway (writable), local path in dev
-const isProduction = process.env.NODE_ENV === 'production';
-const dbPath = isProduction
-  ? '/tmp/course_allocation.db'
-  : path.join(__dirname, '../../course_allocation.db');
+// SQLite database file path
+const dbPath = path.join(__dirname, '../../course_allocation.db');
 
 // Create database connection
 const db = new sqlite3.Database(dbPath, (err) => {
