@@ -57,6 +57,7 @@ const studentLogin = async (req, res) => {
         email: student.email,
         department: student.department,
         gpa: student.gpa,
+        yearOfStudy: student.year_of_study,
         role: 'student'
       }
     });
@@ -111,10 +112,14 @@ const adminLogin = async (req, res) => {
 // Student registration
 const studentRegister = async (req, res) => {
   try {
-    const { name, email, department, gpa, password } = req.body;
+    const { name, email, department, cgpa, yearOfStudy, password } = req.body;
 
     if (!name || !email || !department || !password) {
       return res.status(400).json({ error: 'All fields required' });
+    }
+
+    if (!yearOfStudy || yearOfStudy < 1 || yearOfStudy > 4) {
+      return res.status(400).json({ error: 'Year of study must be between 1 and 4' });
     }
 
     const existingUser = await query(
@@ -132,13 +137,13 @@ const studentRegister = async (req, res) => {
     if (typeof db.execute === 'function') {
       // SQLite
       const insertResult = await db.execute(
-        'INSERT INTO students (name, email, department, gpa, password_hash) VALUES (?, ?, ?, ?, ?)',
-        [name, email, department, gpa || 0.0, hashedPassword]
+        'INSERT INTO students (name, email, department, cgpa, year_of_study, password_hash) VALUES (?, ?, ?, ?, ?, ?)',
+        [name, email, department, cgpa || 0.0, yearOfStudy, hashedPassword]
       );
       
       // Get the inserted student
       const result = await query(
-        'SELECT id, name, email, department, gpa FROM students WHERE id = ?',
+        'SELECT id, name, email, department, cgpa, year_of_study FROM students WHERE id = ?',
         [insertResult.rows[0].id]
       );
       
@@ -148,15 +153,20 @@ const studentRegister = async (req, res) => {
       res.status(201).json({
         token,
         user: {
-          ...student,
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          department: student.department,
+          gpa: student.gpa,
+          yearOfStudy: student.year_of_study,
           role: 'student'
         }
       });
     } else {
       // PostgreSQL
       const result = await query(
-        'INSERT INTO students (name, email, department, gpa, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, department, gpa',
-        [name, email, department, gpa || 0.0, hashedPassword]
+        'INSERT INTO students (name, email, department, cgpa, year_of_study, password_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, department, cgpa, year_of_study',
+        [name, email, department, cgpa || 0.0, yearOfStudy, hashedPassword]
       );
 
       const student = result.rows[0];
@@ -165,7 +175,12 @@ const studentRegister = async (req, res) => {
       res.status(201).json({
         token,
         user: {
-          ...student,
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          department: student.department,
+          gpa: student.gpa,
+          yearOfStudy: student.year_of_study,
           role: 'student'
         }
       });

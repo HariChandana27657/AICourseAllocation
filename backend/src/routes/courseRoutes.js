@@ -5,6 +5,7 @@ const { authenticateToken, isAdmin } = require('../middleware/auth');
 
 // Public/Student routes
 router.get('/', authenticateToken, courseController.getAllCourses);
+router.get('/available/by-year', authenticateToken, courseController.getCoursesByYearOfStudy);
 router.get('/:id', authenticateToken, courseController.getCourseById);
 
 // Admin routes

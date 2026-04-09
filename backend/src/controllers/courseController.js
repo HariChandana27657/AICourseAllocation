@@ -17,6 +17,48 @@ const execute = async (sql, params) => {
   }
 };
 
+// Get courses for student's year of study (electives only)
+const getCoursesByYearOfStudy = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    // Get student's year of study
+    const studentResult = await query('SELECT year_of_study FROM students WHERE id = ?', [studentId]);
+    if (studentResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const student = studentResult.rows[0];
+    const yearOfStudy = student.year_of_study;
+
+    // Get elective courses for this year of study
+    const result = await query(
+      `SELECT * FROM courses WHERE year_of_study = ? AND course_type = 'elective' ORDER BY course_code, section`,
+      [yearOfStudy]
+    );
+
+    // Get completed courses for this student
+    const completedResult = await query(
+      `SELECT course_id FROM completed_courses WHERE student_id = ?`,
+      [studentId]
+    );
+
+    const completedCourseIds = new Set((completedResult.rows || completedResult).map(row => row.course_id));
+
+    // Add available_seats and mark completed courses
+    const coursesWithSeats = (result.rows || result).map(course => ({
+      ...course,
+      available_seats: course.seat_capacity - course.enrolled_count,
+      isCompleted: completedCourseIds.has(course.id)
+    }));
+
+    res.json(coursesWithSeats);
+  } catch (error) {
+    console.error('Get courses by year error:', error);
+    res.status(500).json({ error: 'Failed to fetch courses' });
+  }
+};
+
 // Get all courses
 const getAllCourses = async (req, res) => {
   try {
@@ -60,22 +102,31 @@ const getCourseById = async (req, res) => {
 // Create course (Admin only)
 const createCourse = async (req, res) => {
   try {
-    const { course_code, course_name, department, instructor, seat_capacity, time_slot, description } = req.body;
+    const { course_code, course_name, department, instructor, section, course_type, year_of_study, seat_capacity, time_slot, description } = req.body;
 
-    if (!course_code || !course_name || !department || !seat_capacity || !time_slot) {
-      return res.status(400).json({ error: 'Required fields missing' });
+    if (!course_code || !course_name || !department || !seat_capacity || !time_slot || !year_of_study || !section) {
+      return res.status(400).json({ error: 'Required fields missing: course_code, course_name, department, year_of_study, section, seat_capacity, time_slot' });
     }
 
-    // Check if course code already exists
-    const existing = await query('SELECT id FROM courses WHERE course_code = ?', [course_code]);
+    if (!course_type || !['core', 'elective', 'open'].includes(course_type)) {
+      return res.status(400).json({ error: 'Invalid course_type. Must be core, elective, or open' });
+    }
+
+    if (year_of_study < 1 || year_of_study > 4) {
+      return res.status(400).json({ error: 'Year of study must be between 1 and 4' });
+    }
+
+    // Check if course code with same section already exists
+    const existing = await query('SELECT id FROM courses WHERE course_code = ? AND section = ?', [course_code, section]);
     if (existing.rows.length > 0) {
-      return res.status(400).json({ error: 'Course code already exists' });
+      return res.status(400).json({ error: 'Course code with this section already exists' });
     }
 
     // Insert course
     const result = await execute(
-      'INSERT INTO courses (course_code, course_name, department, instructor, seat_capacity, enrolled_count, time_slot, description) VALUES (?, ?, ?, ?, ?, 0, ?, ?)',
-      [course_code, course_name, department, instructor || '', seat_capacity, time_slot, description || '']
+      `INSERT INTO courses (course_code, course_name, department, instructor, section, course_type, year_of_study, seat_capacity, enrolled_count, time_slot, description) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+      [course_code, course_name, department, instructor || '', section, course_type, year_of_study, seat_capacity, time_slot, description || '']
     );
 
     // Get the inserted course
@@ -92,7 +143,7 @@ const createCourse = async (req, res) => {
 const updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    const { course_code, course_name, department, instructor, seat_capacity, time_slot, description } = req.body;
+    const { course_code, course_name, department, instructor, section, course_type, year_of_study, seat_capacity, time_slot, description } = req.body;
 
     // Check if course exists
     const existing = await query('SELECT id FROM courses WHERE id = ?', [id]);
@@ -102,8 +153,8 @@ const updateCourse = async (req, res) => {
 
     // Update course
     await execute(
-      'UPDATE courses SET course_code = ?, course_name = ?, department = ?, instructor = ?, seat_capacity = ?, time_slot = ?, description = ? WHERE id = ?',
-      [course_code, course_name, department, instructor || '', seat_capacity, time_slot, description || '', id]
+      `UPDATE courses SET course_code = ?, course_name = ?, department = ?, instructor = ?, section = ?, course_type = ?, year_of_study = ?, seat_capacity = ?, time_slot = ?, description = ? WHERE id = ?`,
+      [course_code || '', course_name || '', department || '', instructor || '', section || '', course_type || 'elective', year_of_study || 1, seat_capacity || 0, time_slot || '', description || '', id]
     );
 
     // Get updated course
@@ -139,6 +190,7 @@ const deleteCourse = async (req, res) => {
 
 module.exports = {
   getAllCourses,
+  getCoursesByYearOfStudy,
   getCourseById,
   createCourse,
   updateCourse,

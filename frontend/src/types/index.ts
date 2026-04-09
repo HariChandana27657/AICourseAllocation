@@ -5,6 +5,9 @@ export interface User {
   role: 'student' | 'admin';
   department?: string;
   gpa?: number;
+  cgpa?: number;
+  yearOfStudy?: number;
+  year_of_study?: number;
 }
 
 export interface Course {
@@ -12,12 +15,16 @@ export interface Course {
   course_code: string;
   course_name: string;
   department: string;
-  instructor: string;
+  instructor?: string;
+  section?: string;
+  course_type?: 'core' | 'elective' | 'open';
+  year_of_study?: number;
   seat_capacity: number;
   enrolled_count: number;
   available_seats: number;
   time_slot: string;
   description?: string;
+  isCompleted?: boolean;
   prerequisites?: Prerequisite[];
 }
 

@@ -13,7 +13,7 @@ const statCards = [
   { key: 'courses',     label: 'Total Courses',  color: 'from-pink-400 to-rose-500',    icon: '📚', bg: 'bg-pink-50' },
   { key: 'preferences', label: 'Preferences',    color: 'from-blue-400 to-indigo-500',  icon: '📝', bg: 'bg-blue-50' },
   { key: 'allocated',   label: 'Allocated',      color: 'from-teal-400 to-green-500',   icon: '✅', bg: 'bg-teal-50' },
-  { key: 'gpa',         label: 'Your GPA',       color: 'from-amber-400 to-orange-500', icon: '🎓', bg: 'bg-amber-50' },
+  { key: 'year',        label: 'Year of Study',  color: 'from-purple-400 to-indigo-500', icon: '📅', bg: 'bg-purple-50' },
 ];
 
 const quickLinks = [
@@ -38,7 +38,9 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
         courseAPI.getAll(),
       ]);
       setPreferences(prefRes.data);
-      setAllocations(allocRes.data.allocatedCourses);
+      // Handle new allocation response format (single course)
+      const allocData = allocRes.data?.allocatedCourse ? [allocRes.data.allocatedCourse] : [];
+      setAllocations(allocData);
       setCourses(coursesRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -51,7 +53,7 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
     courses: courses.length,
     preferences: preferences.length,
     allocated: allocations.length,
-    gpa: user?.gpa ?? 0,
+    year: user?.yearOfStudy ?? user?.year_of_study ?? 'N/A',
   };
 
   return (    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-blue-50 relative overflow-hidden">
@@ -70,7 +72,7 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
               <h1 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow">
                 Hello, {user?.name?.split(' ')[0]}! 
               </h1>
-              <p className="text-white/90 text-lg">{user?.department} &nbsp;&nbsp; GPA: <strong>{user?.gpa}</strong></p>
+              <p className="text-white/90 text-lg">{user?.department} &nbsp;&nbsp; CGPA: <strong>{user?.cgpa ?? user?.gpa ?? 0}</strong> &nbsp;&nbsp; Year: <strong>{user?.yearOfStudy ?? user?.year_of_study ?? 'N/A'}</strong></p>
             </div>
             <div className="flex gap-4">
               {quickLinks.map(q => (
