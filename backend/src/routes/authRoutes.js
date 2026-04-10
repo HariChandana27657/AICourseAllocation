@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const { authenticateToken, isAdmin } = require('../middleware/auth');
 
-// Student routes
 router.post('/student/login', authController.studentLogin);
 router.post('/student/register', authController.studentRegister);
-
-// Admin routes
 router.post('/admin/login', authController.adminLogin);
+router.post('/admin/reset-password', authenticateToken, isAdmin, authController.adminResetPassword);
 
 module.exports = router;

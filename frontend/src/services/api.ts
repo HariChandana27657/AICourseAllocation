@@ -23,12 +23,12 @@ api.interceptors.request.use((config) => {
 export const authAPI = {
   studentLogin: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/student/login', { email, password }),
-  
   studentRegister: (data: { name: string; email: string; department: string; gpa: number; password: string }) =>
     api.post<AuthResponse>('/auth/student/register', data),
-  
   adminLogin: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/admin/login', { email, password }),
+  adminResetPassword: (currentPassword: string, newPassword: string) =>
+    api.post('/auth/admin/reset-password', { currentPassword, newPassword }),
 };
 
 // Course API

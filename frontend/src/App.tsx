@@ -9,6 +9,7 @@ import AllocationResults from './pages/AllocationResults';
 import CourseManagement from './pages/CourseManagement';
 import Reports from './pages/Reports';
 import StudentPreferences from './pages/StudentPreferences';
+import AdminResetPassword from './pages/AdminResetPassword';
 import Chatbot from './components/Chatbot';
 import VoiceAssistant from './components/VoiceAssistant';
 import { getUser, isAuthenticated, isStudent, isAdmin } from './utils/auth';
@@ -105,6 +106,14 @@ function App() {
           element={
             <ProtectedRoute requireAdmin>
               <StudentPreferences />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reset-password"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminResetPassword />
             </ProtectedRoute>
           }
         />

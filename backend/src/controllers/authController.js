@@ -110,8 +110,7 @@ const adminLogin = async (req, res) => {
 };
 
 // Student registration
-const studentRegister = async (req, res) => {
-  try {
+const studentRegister = async (req, res) => {  try {
     const { name, email, department, cgpa, yearOfStudy, password } = req.body;
 
     if (!name || !email || !department || !password) {
@@ -194,5 +193,41 @@ const studentRegister = async (req, res) => {
 module.exports = {
   studentLogin,
   adminLogin,
-  studentRegister
+  studentRegister,
+  adminResetPassword
 };
+
+// Admin reset own password
+async function adminResetPassword(req, res) {
+  try {
+    const adminId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current and new password are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+
+    const result = await query('SELECT * FROM admins WHERE id = ?', [adminId]);
+    const rows = result.rows || result;
+    if (rows.length === 0) return res.status(404).json({ error: 'Admin not found' });
+
+    const admin = rows[0];
+    const valid = await bcrypt.compare(currentPassword, admin.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    if (typeof db.execute === 'function') {
+      await db.execute('UPDATE admins SET password_hash = ? WHERE id = ?', [newHash, adminId]);
+    } else {
+      await db.query('UPDATE admins SET password_hash = ? WHERE id = ?', [newHash, adminId]);
+    }
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+}
