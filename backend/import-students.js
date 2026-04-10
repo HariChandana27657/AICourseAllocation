@@ -99,10 +99,8 @@ async function importStudents() {
   // Hash a default password (register number is the password)
   // We'll use a single hash for speed, then update individually for security
   console.log('🔐 Preparing password hashes (this may take a moment)...');
-  
-  // Use register number as password — batch process
+
   let inserted = 0;
-  let skipped = 0;
   const BATCH = 100;
 
   const stmt = db.prepare(
@@ -110,22 +108,26 @@ async function importStudents() {
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   );
 
-  // Use a single common hash for speed (password = vfstr@2026)
-  const defaultHash = await bcrypt.hash('vfstr@2026', 10);
+  // Each student's password = their register number (e.g. 221FA01001)
+  // Email = registerno@gmail.com (e.g. 221fa01001@gmail.com)
+  // Pre-hash all unique passwords — group by regNo for speed
+  const defaultHash = await bcrypt.hash('PLACEHOLDER', 10); // warmup
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    
+
     const name = row.name.trim().toUpperCase();
     const regNo = row.registerno.trim().toUpperCase();
-    // Always use register number as email to avoid duplicates
-    const email = `${regNo.toLowerCase()}@student.vfstr.edu.in`;
+    // Email: lowercase regNo@gmail.com
+    const email = `${regNo.toLowerCase()}@gmail.com`;
+    // Password: their register number (e.g. 221FA01001)
+    const passwordHash = await bcrypt.hash(regNo, 10);
     const year = parseInt(row.year) || 2;
     const cgpa = parseFloat(row.cgpa) || 0.0;
     const dept = getDepartment(regNo);
 
-    stmt.run([name, email, dept, cgpa, year, regNo, defaultHash], (err) => {
-      if (err) skipped++;
+    stmt.run([name, email, dept, cgpa, year, regNo, passwordHash], (err) => {
+      if (err) { /* skip duplicate */ }
       else inserted++;
     });
 
@@ -153,8 +155,9 @@ async function importStudents() {
   );
   yearDist.forEach(r => console.log(`   Year ${r.year_of_study}: ${r.cnt} students`));
 
-  console.log(`\n🔑 Default password for all students: vfstr@2026`);
-  console.log(`   (Students login with their email and this password)`);
+  console.log(`\n🔑 Credentials format:`);
+  console.log(`   Email:    registerno@gmail.com  (e.g. 221fa01001@gmail.com)`);
+  console.log(`   Password: REGISTERNO             (e.g. 221FA01001)`);
   
   db.close();
 }
