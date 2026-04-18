@@ -5,6 +5,96 @@ import { getUser } from '../utils/auth';
 import type { Course } from '../types';
 
 export default function CourseManagement() {
+
+  // ── College Departments ──
+  const DEPARTMENTS = [
+    'Computer Science & Engineering',
+    'Computer Science & Engineering (AI & ML)',
+    'Computer Science & Engineering (Data Science)',
+    'Electronics & Communication Engineering',
+    'Electrical & Electronics Engineering',
+    'Mechanical Engineering',
+    'Civil Engineering',
+    'Information Technology',
+    'Chemical Engineering',
+    'Biotechnology',
+    'Mathematics',
+    'Physics',
+    'Chemistry',
+    'MBA',
+    'MCA',
+  ];
+
+  // ── College Time Slots (from timetable image) ──
+  // Periods: 8:15-9:05, 9:05-9:55, 9:55-10:10(break), 10:10-11:00, 11:00-11:50, 11:50-12:40, 12:40-1:40(break), 1:40-2:30, 2:30-3:20, 3:30-4:30
+  const TIME_SLOTS = [
+    // Single period slots
+    { label: 'MON  8:15 - 9:05  (Period 1)', value: 'MON 8:15-9:05' },
+    { label: 'MON  9:05 - 9:55  (Period 2)', value: 'MON 9:05-9:55' },
+    { label: 'MON  10:10 - 11:00 (Period 3)', value: 'MON 10:10-11:00' },
+    { label: 'MON  11:00 - 11:50 (Period 4)', value: 'MON 11:00-11:50' },
+    { label: 'MON  11:50 - 12:40 (Period 5)', value: 'MON 11:50-12:40' },
+    { label: 'MON  1:40 - 2:30  (Period 6)', value: 'MON 1:40-2:30' },
+    { label: 'MON  2:30 - 3:20  (Period 7)', value: 'MON 2:30-3:20' },
+    { label: 'MON  3:30 - 4:30  (Period 8)', value: 'MON 3:30-4:30' },
+    { label: 'TUE  8:15 - 9:05  (Period 1)', value: 'TUE 8:15-9:05' },
+    { label: 'TUE  9:05 - 9:55  (Period 2)', value: 'TUE 9:05-9:55' },
+    { label: 'TUE  10:10 - 11:00 (Period 3)', value: 'TUE 10:10-11:00' },
+    { label: 'TUE  11:00 - 11:50 (Period 4)', value: 'TUE 11:00-11:50' },
+    { label: 'TUE  11:50 - 12:40 (Period 5)', value: 'TUE 11:50-12:40' },
+    { label: 'TUE  1:40 - 2:30  (Period 6)', value: 'TUE 1:40-2:30' },
+    { label: 'TUE  2:30 - 3:20  (Period 7)', value: 'TUE 2:30-3:20' },
+    { label: 'TUE  3:30 - 4:30  (Period 8)', value: 'TUE 3:30-4:30' },
+    { label: 'WED  8:15 - 9:05  (Period 1)', value: 'WED 8:15-9:05' },
+    { label: 'WED  9:05 - 9:55  (Period 2)', value: 'WED 9:05-9:55' },
+    { label: 'WED  10:10 - 11:00 (Period 3)', value: 'WED 10:10-11:00' },
+    { label: 'WED  11:00 - 11:50 (Period 4)', value: 'WED 11:00-11:50' },
+    { label: 'WED  11:50 - 12:40 (Period 5)', value: 'WED 11:50-12:40' },
+    { label: 'WED  1:40 - 2:30  (Period 6)', value: 'WED 1:40-2:30' },
+    { label: 'WED  2:30 - 3:20  (Period 7)', value: 'WED 2:30-3:20' },
+    { label: 'WED  3:30 - 4:30  (Period 8)', value: 'WED 3:30-4:30' },
+    { label: 'THU  8:15 - 9:05  (Period 1)', value: 'THU 8:15-9:05' },
+    { label: 'THU  9:05 - 9:55  (Period 2)', value: 'THU 9:05-9:55' },
+    { label: 'THU  10:10 - 11:00 (Period 3)', value: 'THU 10:10-11:00' },
+    { label: 'THU  11:00 - 11:50 (Period 4)', value: 'THU 11:00-11:50' },
+    { label: 'THU  11:50 - 12:40 (Period 5)', value: 'THU 11:50-12:40' },
+    { label: 'THU  1:40 - 2:30  (Period 6)', value: 'THU 1:40-2:30' },
+    { label: 'THU  2:30 - 3:20  (Period 7)', value: 'THU 2:30-3:20' },
+    { label: 'THU  3:30 - 4:30  (Period 8)', value: 'THU 3:30-4:30' },
+    { label: 'FRI  8:15 - 9:05  (Period 1)', value: 'FRI 8:15-9:05' },
+    { label: 'FRI  9:05 - 9:55  (Period 2)', value: 'FRI 9:05-9:55' },
+    { label: 'FRI  10:10 - 11:00 (Period 3)', value: 'FRI 10:10-11:00' },
+    { label: 'FRI  11:00 - 11:50 (Period 4)', value: 'FRI 11:00-11:50' },
+    { label: 'FRI  11:50 - 12:40 (Period 5)', value: 'FRI 11:50-12:40' },
+    { label: 'FRI  1:40 - 2:30  (Period 6)', value: 'FRI 1:40-2:30' },
+    { label: 'FRI  2:30 - 3:20  (Period 7)', value: 'FRI 2:30-3:20' },
+    { label: 'FRI  3:30 - 4:30  (Period 8)', value: 'FRI 3:30-4:30' },
+    { label: 'SAT  8:15 - 9:05  (Period 1)', value: 'SAT 8:15-9:05' },
+    { label: 'SAT  9:05 - 9:55  (Period 2)', value: 'SAT 9:05-9:55' },
+    { label: 'SAT  10:10 - 11:00 (Period 3)', value: 'SAT 10:10-11:00' },
+    { label: 'SAT  11:00 - 11:50 (Period 4)', value: 'SAT 11:00-11:50' },
+    { label: 'SAT  11:50 - 12:40 (Period 5)', value: 'SAT 11:50-12:40' },
+    { label: 'SAT  1:40 - 2:30  (Period 6)', value: 'SAT 1:40-2:30' },
+    { label: 'SAT  2:30 - 3:20  (Period 7)', value: 'SAT 2:30-3:20' },
+    { label: 'SAT  3:30 - 4:30  (Period 8)', value: 'SAT 3:30-4:30' },
+    // Double period (lab) slots
+    { label: 'MON  8:15 - 9:55  (Periods 1-2)', value: 'MON 8:15-9:55' },
+    { label: 'MON  10:10 - 11:50 (Periods 3-4)', value: 'MON 10:10-11:50' },
+    { label: 'MON  11:50 - 1:40  (Periods 5-6)', value: 'MON 11:50-1:40' },
+    { label: 'MON  1:40 - 3:20  (Periods 6-7)', value: 'MON 1:40-3:20' },
+    { label: 'TUE  8:15 - 9:55  (Periods 1-2)', value: 'TUE 8:15-9:55' },
+    { label: 'TUE  10:10 - 11:50 (Periods 3-4)', value: 'TUE 10:10-11:50' },
+    { label: 'TUE  11:50 - 1:40  (Periods 5-6)', value: 'TUE 11:50-1:40' },
+    { label: 'TUE  1:40 - 3:20  (Periods 6-7)', value: 'TUE 1:40-3:20' },
+    { label: 'WED  8:15 - 9:55  (Periods 1-2)', value: 'WED 8:15-9:55' },
+    { label: 'WED  10:10 - 11:50 (Periods 3-4)', value: 'WED 10:10-11:50' },
+    { label: 'THU  8:15 - 9:55  (Periods 1-2)', value: 'THU 8:15-9:55' },
+    { label: 'THU  10:10 - 11:50 (Periods 3-4)', value: 'THU 10:10-11:50' },
+    { label: 'FRI  8:15 - 9:55  (Periods 1-2)', value: 'FRI 8:15-9:55' },
+    { label: 'FRI  10:10 - 11:50 (Periods 3-4)', value: 'FRI 10:10-11:50' },
+    { label: 'SAT  8:15 - 9:55  (Periods 1-2)', value: 'SAT 8:15-9:55' },
+    { label: 'SAT  10:10 - 11:50 (Periods 3-4)', value: 'SAT 10:10-11:50' },
+  ];
   const [courses, setCourses] = useState<Course[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -285,14 +375,17 @@ export default function CourseManagement() {
 
                 <div>
                   <label className="form-label">Department *</label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.department}
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                     className="form-input"
                     required
-                    placeholder="e.g., Computer Science"
-                  />
+                  >
+                    <option value="">-- Select Department --</option>
+                    {DEPARTMENTS.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -334,15 +427,28 @@ export default function CourseManagement() {
               </div>
 
               <div>
-                <label className="form-label">Time Slot *</label>
-                <input
-                  type="text"
+                <label className="form-label">Time Slot * <span className="text-xs text-gray-400 font-normal">(College Schedule)</span></label>
+                <select
                   value={formData.time_slot}
                   onChange={(e) => setFormData({ ...formData, time_slot: e.target.value })}
-                  placeholder="e.g., Mon/Wed 9:00-10:30"
                   className="form-input"
                   required
-                />
+                >
+                  <option value="">-- Select Time Slot --</option>
+                  <optgroup label="── Single Period ──">
+                    {TIME_SLOTS.filter(t => !t.label.includes('Periods')).map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="── Double Period (Lab) ──">
+                    {TIME_SLOTS.filter(t => t.label.includes('Periods')).map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </optgroup>
+                </select>
+                {formData.time_slot && (
+                  <p className="text-xs text-green-600 mt-1 font-medium">✓ Selected: {formData.time_slot}</p>
+                )}
               </div>
 
               <div>
