@@ -49,6 +49,8 @@ const emptyForm = {
   department: '',
   instructor: '',
   seat_capacity: 72,
+  year_of_study: 3,
+  section: 'A',
   day: '',
   period: '',
   time_slot: '',
@@ -92,6 +94,8 @@ export default function CourseManagement() {
         department: course.department,
         instructor: course.instructor || '',
         seat_capacity: course.seat_capacity,
+        year_of_study: (course as any).year_of_study || 3,
+        section: (course as any).section || 'A',
         day: parts[0] || '',
         period: parts.slice(1).join(' ') || '',
         time_slot: course.time_slot,
@@ -132,6 +136,9 @@ export default function CourseManagement() {
         department: formData.department,
         instructor: formData.instructor,
         seat_capacity: formData.seat_capacity,
+        year_of_study: formData.year_of_study,
+        section: formData.section,
+        course_type: 'elective',
         time_slot: formData.time_slot,
         description: formData.description,
       };
@@ -330,6 +337,31 @@ export default function CourseManagement() {
                   <input type="number" value={formData.seat_capacity}
                     onChange={e => setFormData({ ...formData, seat_capacity: parseInt(e.target.value) || 1 })}
                     className="form-input" min="1" required />
+                </div>
+              </div>
+
+              {/* Row 3: Year of Study + Section */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Year of Study *</label>
+                  <select value={formData.year_of_study}
+                    onChange={e => setFormData({ ...formData, year_of_study: parseInt(e.target.value) })}
+                    className="form-input" required>
+                    <option value={1}>1st Year</option>
+                    <option value={2}>2nd Year</option>
+                    <option value={3}>3rd Year</option>
+                    <option value={4}>4th Year</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Section *</label>
+                  <select value={formData.section}
+                    onChange={e => setFormData({ ...formData, section: e.target.value })}
+                    className="form-input" required>
+                    {['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S'].map(s => (
+                      <option key={s} value={s}>Section {s}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

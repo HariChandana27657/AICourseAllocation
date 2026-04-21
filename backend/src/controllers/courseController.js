@@ -102,37 +102,34 @@ const getCourseById = async (req, res) => {
 // Create course (Admin only)
 const createCourse = async (req, res) => {
   try {
-    const { course_code, course_name, department, instructor, section, course_type, year_of_study, seat_capacity, time_slot, description } = req.body;
+    const {
+      course_code, course_name, department, instructor,
+      section = 'A',
+      course_type = 'elective',
+      year_of_study = 3,
+      seat_capacity, time_slot, description
+    } = req.body;
 
-    if (!course_code || !course_name || !department || !seat_capacity || !time_slot || !year_of_study || !section) {
-      return res.status(400).json({ error: 'Required fields missing: course_code, course_name, department, year_of_study, section, seat_capacity, time_slot' });
-    }
-
-    if (!course_type || !['core', 'elective', 'open'].includes(course_type)) {
-      return res.status(400).json({ error: 'Invalid course_type. Must be core, elective, or open' });
-    }
-
-    if (year_of_study < 1 || year_of_study > 4) {
-      return res.status(400).json({ error: 'Year of study must be between 1 and 4' });
+    if (!course_code || !course_name || !department || !seat_capacity || !time_slot) {
+      return res.status(400).json({ error: 'Required fields: course_code, course_name, department, seat_capacity, time_slot' });
     }
 
     // Check if course code with same section already exists
     const existing = await query('SELECT id FROM courses WHERE course_code = ? AND section = ?', [course_code, section]);
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ error: 'Course code with this section already exists' });
+    const existingRows = existing.rows || existing;
+    if (existingRows.length > 0) {
+      return res.status(400).json({ error: `Course ${course_code} section ${section} already exists` });
     }
 
-    // Insert course
     const result = await execute(
-      `INSERT INTO courses (course_code, course_name, department, instructor, section, course_type, year_of_study, seat_capacity, enrolled_count, time_slot, description) 
+      `INSERT INTO courses (course_code, course_name, department, instructor, section, course_type, year_of_study, seat_capacity, enrolled_count, time_slot, description)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
       [course_code, course_name, department, instructor || '', section, course_type, year_of_study, seat_capacity, time_slot, description || '']
     );
 
-    // Get the inserted course
-    const newCourse = await query('SELECT * FROM courses WHERE id = ?', [result.rows[0].id]);
-    
-    res.status(201).json(newCourse.rows[0]);
+    const newCourse = await query('SELECT * FROM courses WHERE id = ?', [(result.rows || result)[0].id]);
+    const row = (newCourse.rows || newCourse)[0];
+    res.status(201).json({ ...row, available_seats: row.seat_capacity - row.enrolled_count });
   } catch (error) {
     console.error('Create course error:', error);
     res.status(500).json({ error: 'Failed to create course', details: error.message });
