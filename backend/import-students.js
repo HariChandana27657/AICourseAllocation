@@ -45,25 +45,14 @@ function cleanEmail(email, regNo) {
   return e;
 }
 
-// Determine department from register number prefix
+// Determine department from register number prefix — CSE only
 function getDepartment(regNo) {
   const code = regNo.substring(5, 7);
-  const deptMap = {
+  const deptMap: Record<string, string> = {
     '01': 'Computer Science',
-    '02': 'Electronics & Communication',
-    '03': 'Electrical Engineering',
-    '04': 'Mechanical Engineering',
-    '05': 'Civil Engineering',
-    '06': 'Information Technology',
-    '07': 'Chemical Engineering',
-    '08': 'Biotechnology',
-    '09': 'Mathematics',
-    '10': 'Physics',
-    '11': 'Chemistry',
-    '12': 'MBA',
-    '13': 'MCA',
+    '06': 'Computer Science', // IT mapped to CS
   };
-  return deptMap[code] || 'Computer Science';
+  return deptMap[code] || null; // null = skip non-CSE
 }
 
 async function importStudents() {
